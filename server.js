@@ -146,4 +146,9 @@ app.get('/api/proxy', async (req, res) => {
 });
 
 const PORT = process.env.PORT ?? 3000;
-app.listen(PORT, () => console.log(`\n  PREZENTACE  →  http://localhost:${PORT}\n`));
+app.listen(PORT, async () => {
+  const url = `http://localhost:${PORT}`;
+  console.log(`\n  PREZENTACE  →  ${url}\n`);
+  const { default: open } = await import('open');
+  open(url);
+});

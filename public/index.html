@@ -351,9 +351,9 @@ textarea#url-input::placeholder { color: var(--text3); }
       <div class="sidebar-section">
         <div class="section-label">Soubory</div>
         <div class="drop-zone" id="drop-zone">
-          <input type="file" id="file-input" multiple accept="image/*,video/*">
+          <input type="file" id="file-input" multiple accept="image/*,video/*,application/pdf">
           <div class="dz-icon">📁</div>
-          <div class="dz-text"><strong>Přetáhni sem</strong><br>nebo klikni pro výběr<br>obrázky &amp; videa</div>
+          <div class="dz-text"><strong>Přetáhni sem</strong><br>nebo klikni pro výběr<br>obrázky, videa &amp; PDF</div>
         </div>
       </div>
     </div>
@@ -400,6 +400,7 @@ textarea#url-input::placeholder { color: var(--text3); }
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
 let slides = [];
 let readySlides = [];
@@ -588,9 +589,47 @@ urlInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addUrls(); }
 });
 
+// PDF import
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+async function handlePDF(file) {
+  const ab = await file.arrayBuffer();
+  let pdf;
+  try { pdf = await pdfjsLib.getDocument({ data: ab }).promise; }
+  catch (e) {
+    slides.push({ id: uid(), type: 'image', url: '', title: file.name, status: 'error', error: e.message });
+    renderQueue(); return;
+  }
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const id = uid();
+    slides.push({ id, type: 'image', url: '', title: `${file.name} – strana ${p}`, status: 'loading', error: null });
+    renderQueue();
+
+    try {
+      const page = await pdf.getPage(p);
+      const vp = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = vp.width; canvas.height = vp.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+      const slide = slides.find(s => s.id === id);
+      if (slide) { slide.url = URL.createObjectURL(blob); slide.thumb = slide.url; slide.status = 'ready'; }
+    } catch (e) {
+      const slide = slides.find(s => s.id === id);
+      if (slide) { slide.status = 'error'; slide.error = e.message; }
+    }
+    renderQueue();
+  }
+}
+
 // File upload
 function handleFiles(files) {
-  for (const f of files) {
+  const pdfs = [], rest = [];
+  for (const f of files) (f.type === 'application/pdf' ? pdfs : rest).push(f);
+
+  for (const f of rest) {
     slides.push({
       id: uid(),
       type: f.type.startsWith('video') ? 'video' : 'image',
@@ -600,7 +639,8 @@ function handleFiles(files) {
       error: null
     });
   }
-  renderQueue();
+  if (rest.length) renderQueue();
+  pdfs.forEach(handlePDF);
 }
 
 fileInput.addEventListener('change', e => handleFiles(e.target.files));
