@@ -203,7 +203,7 @@ textarea#url-input::placeholder { color: var(--text3); }
 }
 
 .card-del {
-  position: absolute; top: 5px; right: 5px;
+  position: absolute; top: 5px; right: 5px; bottom: auto; left: auto;
   width: 18px; height: 18px; background: rgba(0,0,0,0.65);
   border: none; border-radius: 3px; color: rgba(255,255,255,0.45);
   font-size: 14px; cursor: pointer;
@@ -212,6 +212,22 @@ textarea#url-input::placeholder { color: var(--text3); }
 }
 .slide-card:hover .card-del { opacity: 1; }
 .card-del:hover { color: var(--red); }
+
+.card-dup {
+  position: absolute; bottom: 5px; left: 5px; top: auto; right: auto;
+  width: 18px; height: 18px; background: rgba(0,0,0,0.65);
+  border: none; border-radius: 3px; color: rgba(255,255,255,0.45);
+  font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s, color 0.15s; z-index: 2;
+}
+.slide-card:hover .card-dup { opacity: 1; }
+.card-dup:hover { color: var(--accent); }
+
+#spotlight {
+  position: fixed; inset: 0; pointer-events: none; z-index: 8; display: none;
+}
+#spotlight.active { display: block; }
 
 .card-footer { padding: 7px 9px; }
 .card-name {
@@ -253,7 +269,7 @@ textarea#url-input::placeholder { color: var(--text3); }
 #nav-next { right: 14px; }
 
 .pres-hud {
-  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 25;
   display: flex; align-items: center; gap: 14px;
   background: rgba(8,8,8,0.8); backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;
@@ -388,13 +404,18 @@ textarea#url-input::placeholder { color: var(--text3); }
   <div id="pres-tools">
     <button class="tool-btn" id="tool-draw" title="Kreslit (D)">&#9998;</button>
     <button class="tool-btn" id="tool-text" title="Text box (T)">T</button>
+    <button class="tool-btn" id="tool-spot" title="Spotlight (S)">◎</button>
     <button class="tool-btn" id="tool-clear" title="Vymazat kresbu (C)">&#8856;</button>
   </div>
+
+  <div id="spotlight"></div>
 
   <div class="pres-hud">
     <span id="pres-counter">1 / 1</span>
     <span class="hud-sep">|</span>
-    <span>← →&nbsp; D kreslit&nbsp; T text&nbsp; ESC zpět</span>
+    <span id="zoom-badge" style="display:none;color:rgba(255,255,255,0.7);font-weight:600"></span>
+    <span class="hud-sep" id="zoom-sep" style="display:none">|</span>
+    <span>← →&nbsp; D kreslit&nbsp; T text&nbsp; S spotlight&nbsp; scroll zoom&nbsp; ESC zpět</span>
   </div>
 </div>
 
@@ -442,14 +463,27 @@ const drawCanvas  = $('draw-canvas');
 const textLayer   = $('text-layer');
 const toolDraw    = $('tool-draw');
 const toolText    = $('tool-text');
+const toolSpot    = $('tool-spot');
 const toolClear   = $('tool-clear');
 const navPrev     = $('nav-prev');
 const navNext     = $('nav-next');
+const spotlightEl = $('spotlight');
+const zoomBadge   = $('zoom-badge');
+const zoomSep     = $('zoom-sep');
+
+// Zoom state
+let zoomLevel = 1;
+let zoomOx = 50, zoomOy = 50;
+let presActiveEl = null;
+
+// Spotlight state
+let spotlightActive = false;
+const SPOT_R = 130;
 
 Sortable.create(slideQueue, {
   animation: 140,
   ghostClass: 'sortable-ghost',
-  filter: '.card-del',
+  filter: '.card-del,.card-dup',
   preventOnFilter: true,
   onEnd({ item, newIndex }) {
     const from = slides.findIndex(s => s.id === item.dataset.id);
@@ -461,6 +495,86 @@ Sortable.create(slideQueue, {
 });
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
+
+// ── SESSION SAVE / LOAD (IndexedDB) ─────────────
+let _saveTimer;
+function scheduleSessionSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveSession, 800);
+}
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('prezentace_db', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('session');
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function saveSession() {
+  try {
+    const data = slides.map(s => {
+      const url = s._storedUrl ?? (s.url?.startsWith('blob:') ? null : s.url);
+      if (!url) return null;
+      const thumb = s.thumb?.startsWith('blob:') ? url : (s.thumb || url);
+      return { id: s.id, type: s.type, title: s.title, url, thumb, status: 'ready', error: null, textBoxes: s.textBoxes ?? [] };
+    }).filter(Boolean);
+    const db = await openDB();
+    const tx = db.transaction('session', 'readwrite');
+    tx.objectStore('session').put(data, 'slides');
+  } catch {}
+}
+
+async function clearSession() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('session', 'readwrite');
+    tx.objectStore('session').delete('slides');
+  } catch {}
+}
+
+async function loadSession() {
+  try {
+    const db = await openDB();
+    const data = await new Promise((res, rej) => {
+      const req = db.transaction('session', 'readonly').objectStore('session').get('slides');
+      req.onsuccess = e => res(e.target.result);
+      req.onerror = rej;
+    });
+    if (data?.length) slides = data.map(s => ({ ...s, error: null }));
+  } catch {}
+}
+
+// ── ZOOM ────────────────────────────────────────
+function applyZoom() {
+  if (!presActiveEl || presActiveEl === presIframe) return;
+  presActiveEl.style.transformOrigin = `${zoomOx}% ${zoomOy}%`;
+  presActiveEl.style.transform = zoomLevel === 1 ? '' : `scale(${zoomLevel})`;
+  const show = zoomLevel !== 1;
+  zoomBadge.style.display = show ? '' : 'none';
+  zoomSep.style.display   = show ? '' : 'none';
+  if (show) zoomBadge.textContent = Math.round(zoomLevel * 100) + '%';
+}
+
+function resetZoom() {
+  zoomLevel = 1;
+  if (presActiveEl) presActiveEl.style.transform = '';
+  zoomBadge.style.display = 'none';
+  zoomSep.style.display   = 'none';
+}
+
+// ── SPOTLIGHT ────────────────────────────────────
+function toggleSpotlight() {
+  spotlightActive = !spotlightActive;
+  spotlightEl.classList.toggle('active', spotlightActive);
+  toolSpot.classList.toggle('active', spotlightActive);
+}
+
+document.addEventListener('mousemove', e => {
+  if (!spotlightActive || !inPres) return;
+  spotlightEl.style.background = `radial-gradient(circle at ${e.clientX}px ${e.clientY}px, transparent ${SPOT_R}px, rgba(0,0,0,0.85) ${SPOT_R + 90}px)`;
+});
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>
@@ -516,6 +630,7 @@ function renderQueue() {
         <span class="card-num">${String(i + 1).padStart(2, '0')}</span>
         ${slide.status === 'ready' && slide.type === 'video' ? '<span class="card-badge">VIDEO</span>' : ''}
         <button class="card-del" title="Odstranit">×</button>
+        ${slide.status === 'ready' ? '<button class="card-dup" title="Duplikovat">⧉</button>' : ''}
       </div>
       <div class="card-footer">
         <div class="card-name${slide.status === 'error' ? ' err' : ''}">${esc(label)}</div>
@@ -527,9 +642,17 @@ function renderQueue() {
       renderQueue();
     });
 
+    card.querySelector('.card-dup')?.addEventListener('click', e => {
+      e.stopPropagation();
+      const idx = slides.indexOf(slide);
+      const copy = { ...slide, id: uid(), textBoxes: (slide.textBoxes ?? []).map(t => ({ ...t, id: uid() })) };
+      slides.splice(idx + 1, 0, copy);
+      renderQueue();
+    });
+
     if (slide.status === 'ready') {
       card.addEventListener('click', e => {
-        if (e.target.classList.contains('card-del')) return;
+        if (e.target.closest('.card-del,.card-dup')) return;
         startPres(i);
       });
     }
@@ -538,6 +661,7 @@ function renderQueue() {
   });
 
   updateHeader();
+  scheduleSessionSave();
 }
 
 // URL extraction
@@ -613,9 +737,9 @@ async function handlePDF(file) {
       const canvas = document.createElement('canvas');
       canvas.width = vp.width; canvas.height = vp.height;
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
       const slide = slides.find(s => s.id === id);
-      if (slide) { slide.url = URL.createObjectURL(blob); slide.thumb = slide.url; slide.status = 'ready'; }
+      if (slide) { slide.url = dataUrl; slide.thumb = dataUrl; slide.status = 'ready'; }
     } catch (e) {
       const slide = slides.find(s => s.id === id);
       if (slide) { slide.status = 'error'; slide.error = e.message; }
@@ -630,14 +754,20 @@ function handleFiles(files) {
   for (const f of files) (f.type === 'application/pdf' ? pdfs : rest).push(f);
 
   for (const f of rest) {
-    slides.push({
+    const slide = {
       id: uid(),
       type: f.type.startsWith('video') ? 'video' : 'image',
       url: URL.createObjectURL(f),
       title: f.name,
       status: 'ready',
       error: null
-    });
+    };
+    slides.push(slide);
+    if (!f.type.startsWith('video')) {
+      const reader = new FileReader();
+      reader.onload = e => { slide._storedUrl = e.target.result; saveSession(); };
+      reader.readAsDataURL(f);
+    }
   }
   if (rest.length) renderQueue();
   pdfs.forEach(handlePDF);
@@ -696,7 +826,11 @@ document.addEventListener('paste', e => {
   }
 });
 
-clearBtn.addEventListener('click', () => { slides = []; renderQueue(); });
+clearBtn.addEventListener('click', () => {
+  slides = [];
+  clearSession();
+  renderQueue();
+});
 playBtn.addEventListener('click', () => startPres(0, true));
 
 // Presentation
@@ -732,6 +866,8 @@ function stopPres() {
   setTool(null);
   clearDrawing();
   clearMedia();
+  if (spotlightActive) toggleSpotlight();
+  resetZoom();
   inPres = false;
   pres.classList.remove('active');
   hub.style.display = '';
@@ -759,6 +895,8 @@ function showSlide(idx) {
     presImg.style.display = 'block';
     el = presImg;
   }
+  presActiveEl = el;
+  resetZoom();
   el.classList.remove('pres-enter');
   void el.offsetWidth;
   el.classList.add('pres-enter');
@@ -780,6 +918,17 @@ function nextSlide() {
 
 navPrev.addEventListener('click', prevSlide);
 navNext.addEventListener('click', nextSlide);
+
+pres.addEventListener('wheel', e => {
+  if (!inPres) return;
+  const slide = readySlides[currentIdx];
+  if (!slide || slide.type === 'iframe') return;
+  e.preventDefault();
+  zoomOx = (e.clientX / window.innerWidth) * 100;
+  zoomOy = (e.clientY / window.innerHeight) * 100;
+  zoomLevel = Math.max(1, Math.min(8, zoomLevel * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+  applyZoom();
+}, { passive: false });
 
 // Click left 40% = prev, right 60% = next (only when no tool active)
 pres.addEventListener('click', e => {
@@ -805,6 +954,8 @@ document.addEventListener('keydown', e => {
 
   if (e.key === 'd' || e.key === 'D') { setTool(activeTool === 'draw' ? null : 'draw'); return; }
   if (e.key === 't' || e.key === 'T') { setTool(activeTool === 'text' ? null : 'text'); return; }
+  if (e.key === 's' || e.key === 'S') { toggleSpotlight(); return; }
+  if (e.key === 'z' || e.key === 'Z') { resetZoom(); return; }
   if (e.key === 'c' || e.key === 'C') { clearDrawing(); return; }
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
@@ -841,6 +992,7 @@ function setTool(tool) {
 
 toolDraw.addEventListener('click', () => setTool(activeTool === 'draw' ? null : 'draw'));
 toolText.addEventListener('click', () => setTool(activeTool === 'text' ? null : 'text'));
+toolSpot.addEventListener('click', toggleSpotlight);
 toolClear.addEventListener('click', clearDrawing);
 
 // ── DRAWING ──────────────────────────────────────
@@ -1109,7 +1261,7 @@ async function exportPDF() {
   pdfBtn.textContent = '↓ PDF';
 }
 
-renderQueue();
+loadSession().then(() => renderQueue());
 </script>
 </body>
 </html>
