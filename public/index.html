@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PREZENTACE</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0c0c;
+  --surface: #111;
+  --surface2: #161616;
+  --surface3: #1e1e1e;
+  --border: #242424;
+  --border2: #2e2e2e;
+  --accent: #6366f1;
+  --accent-bg: rgba(99,102,241,0.12);
+  --text: #d1d1d1;
+  --text2: #888;
+  --text3: #555;
+  --red: #ef4444;
+  --r: 6px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px; overflow: hidden; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* HUB */
+#hub { display: flex; flex-direction: column; height: 100vh; }
+
+.hub-header {
+  height: 48px; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+
+.hub-title {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hub-title span { color: var(--accent); }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+#slide-count-badge {
+  font-size: 11px; color: var(--text3); padding: 3px 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+#pdf-btn {
+  height: 30px; padding: 0 14px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  color: var(--text2); border-radius: 5px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#pdf-btn:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
+#pdf-btn:disabled { opacity: 0.28; cursor: default; }
+
+#play-btn {
+  height: 30px; padding: 0 16px; background: var(--accent);
+  color: #fff; border: none; border-radius: 5px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: opacity 0.15s;
+}
+#play-btn:hover:not(:disabled) { opacity: 0.85; }
+#play-btn:disabled { opacity: 0.28; cursor: default; }
+
+.hub-body { display: flex; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 256px; flex-shrink: 0; background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+
+.sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+
+.section-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+  color: var(--text3); text-transform: uppercase; margin-bottom: 10px;
+}
+
+textarea#url-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text);
+  font-size: 11.5px; font-family: 'SF Mono', 'Fira Code', monospace;
+  padding: 9px 10px; resize: none; height: 112px;
+  outline: none; line-height: 1.6; transition: border-color 0.15s;
+}
+textarea#url-input:focus { border-color: var(--accent); }
+textarea#url-input::placeholder { color: var(--text3); }
+
+.btn-add {
+  margin-top: 8px; width: 100%; height: 30px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text2); font-size: 12px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn-add:hover { background: var(--surface3); border-color: var(--border2); color: var(--text); }
+
+.drop-zone {
+  position: relative; border: 1.5px dashed var(--border2);
+  border-radius: var(--r); padding: 22px 12px; text-align: center;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--accent-bg); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.dz-icon { font-size: 22px; margin-bottom: 6px; }
+.dz-text { font-size: 11px; color: var(--text3); line-height: 1.7; }
+.dz-text strong { color: var(--text2); }
+
+/* QUEUE */
+.queue-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.queue-toolbar {
+  height: 40px; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 20px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.queue-toolbar .section-label { margin: 0; }
+
+.btn-clear {
+  font-size: 11px; color: var(--text3); background: none; border: none;
+  cursor: pointer; padding: 3px 6px; border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+.btn-clear:hover { color: var(--red); background: rgba(239,68,68,0.08); }
+
+#queue-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--text3); text-align: center; padding: 40px; gap: 10px;
+  user-select: none;
+}
+.qe-icon { font-size: 36px; opacity: 0.35; }
+.qe-text { font-size: 13px; line-height: 1.9; }
+
+#slide-queue {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px; align-content: start;
+}
+
+/* CARDS */
+.slide-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+  cursor: grab; user-select: none;
+  transition: border-color 0.15s; position: relative;
+}
+.slide-card:hover { border-color: var(--border2); }
+.slide-card.sortable-ghost { opacity: 0.2; }
+.slide-card.is-loading, .slide-card.is-error { cursor: default; }
+.slide-card.is-ready { cursor: grab; }
+.slide-card.is-ready:hover { border-color: #3a3a3a; cursor: pointer; }
+
+.card-thumb {
+  position: relative; width: 100%; padding-top: 56.25%;
+  background: var(--surface3); overflow: hidden;
+}
+.card-thumb > * { position: absolute; inset: 0; }
+.card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.thumb-center {
+  display: flex; align-items: center; justify-content: center;
+}
+
+.thumb-spinner {
+  width: 22px; height: 22px;
+  border: 2px solid var(--border2); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.65s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.thumb-video-bg { background: #0a0a14; width: 100%; height: 100%; }
+.thumb-video-icon {
+  font-size: 20px; color: rgba(255,255,255,0.4); z-index: 1;
+}
+
+.card-num {
+  position: absolute; top: 5px; left: 6px;
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.55);
+  background: rgba(0,0,0,0.55); padding: 1px 5px; border-radius: 3px; z-index: 1;
+}
+
+.card-badge {
+  position: absolute; bottom: 5px; right: 5px;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.6);
+  padding: 1px 5px; border-radius: 3px;
+}
+
+.card-del {
+  position: absolute; top: 5px; right: 5px;
+  width: 18px; height: 18px; background: rgba(0,0,0,0.65);
+  border: none; border-radius: 3px; color: rgba(255,255,255,0.45);
+  font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s, color 0.15s; z-index: 2;
+}
+.slide-card:hover .card-del { opacity: 1; }
+.card-del:hover { color: var(--red); }
+
+.card-footer { padding: 7px 9px; }
+.card-name {
+  font-size: 11px; color: var(--text3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-name.err { color: var(--red); }
+
+/* PRESENTATION */
+#presentation {
+  display: none; position: fixed; inset: 0; background: #000;
+  z-index: 999; align-items: center; justify-content: center;
+}
+#presentation.active { display: flex; }
+
+#pres-img {
+  max-width: 100vw; max-height: 100vh;
+  object-fit: contain; display: none;
+}
+#pres-video {
+  max-width: 100vw; max-height: 100vh; display: none;
+}
+#pres-iframe {
+  width: 100vw; height: 100vh; border: none;
+  background: #000; display: none;
+}
+
+.pres-nav {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 64px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 6px; color: rgba(255,255,255,0.3); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.25s, background 0.15s, color 0.15s;
+}
+#presentation:hover .pres-nav { opacity: 1; }
+.pres-nav:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+#nav-prev { left: 14px; }
+#nav-next { right: 14px; }
+
+.pres-hud {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(8,8,8,0.8); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;
+  padding: 7px 16px; font-size: 12px; color: rgba(255,255,255,0.35);
+  opacity: 0; transition: opacity 0.25s; pointer-events: none; white-space: nowrap;
+}
+#presentation:hover .pres-hud { opacity: 1; }
+#pres-counter { font-weight: 600; color: rgba(255,255,255,0.7); min-width: 42px; text-align: center; }
+.hud-sep { color: rgba(255,255,255,0.1); }
+
+@keyframes fadePop {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.pres-enter { animation: fadePop 0.18s ease; }
+
+/* OVERLAY (drawing + text layer) */
+#pres-overlay {
+  position: fixed; inset: 0; z-index: 10; pointer-events: none;
+}
+#pres-overlay.tool-active { pointer-events: all; }
+#draw-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
+}
+#text-layer { position: absolute; inset: 0; pointer-events: none; }
+
+/* TEXT BOXES */
+.text-box {
+  position: absolute; cursor: move; user-select: none;
+  padding: 4px 10px; border: 1.5px solid rgba(255,220,0,0.5);
+  border-radius: 4px; background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  pointer-events: all;
+}
+.text-box:focus-within { border-color: rgba(255,220,0,1); }
+.tb-content {
+  outline: none; color: #fff; font-size: 22px; font-weight: 700;
+  font-family: system-ui; white-space: nowrap; min-width: 10px;
+  cursor: text;
+  text-shadow: 1px 1px 5px rgba(0,0,0,1), -1px -1px 5px rgba(0,0,0,1);
+}
+.tb-del {
+  position: absolute; top: -8px; right: -8px;
+  width: 16px; height: 16px; background: #ef4444;
+  border: none; border-radius: 50%; color: #fff;
+  font-size: 12px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s; pointer-events: all;
+}
+.text-box:hover .tb-del { opacity: 1; }
+
+/* TOOLS TOOLBAR */
+#pres-tools {
+  position: fixed; bottom: 18px; right: 20px;
+  display: flex; gap: 5px;
+  opacity: 0; transition: opacity 0.25s;
+  z-index: 20;
+}
+#presentation:hover #pres-tools { opacity: 1; }
+.tool-btn {
+  width: 34px; height: 34px;
+  background: rgba(8,8,8,0.82); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  color: rgba(255,255,255,0.45); font-size: 14px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tool-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); }
+.tool-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+
+<div id="hub">
+  <div class="hub-header">
+    <span class="hub-title">PREZEN<span>TACE</span></span>
+    <div class="header-right">
+      <span id="slide-count-badge">0 snímků</span>
+      <button id="pdf-btn" disabled>&#8595; PDF</button>
+      <button id="play-btn" disabled>
+        <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M0 0l9 5-9 5V0z"/></svg>
+        PLAY
+      </button>
+    </div>
+  </div>
+
+  <div class="hub-body">
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="section-label">URL Linky</div>
+        <textarea id="url-input"
+          placeholder="Vlož URL adresy&#10;(každá na nový řádek)&#10;&#10;reddit.com/r/...&#10;prnt.sc/...&#10;imgur.com/..."></textarea>
+        <button class="btn-add" id="add-btn">+ Přidat</button>
+      </div>
+      <div class="sidebar-section">
+        <div class="section-label">Soubory</div>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" multiple accept="image/*,video/*">
+          <div class="dz-icon">📁</div>
+          <div class="dz-text"><strong>Přetáhni sem</strong><br>nebo klikni pro výběr<br>obrázky &amp; videa</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="queue-wrap">
+      <div class="queue-toolbar">
+        <span class="section-label">Snímky</span>
+        <button class="btn-clear" id="clear-btn" style="display:none">Vymazat vše</button>
+      </div>
+      <div id="queue-empty">
+        <div class="qe-icon">🎞</div>
+        <div class="qe-text">Přidej URL adresy nebo nahraj soubory<br>a tady se sestaví tvoje prezentace</div>
+      </div>
+      <div id="slide-queue" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div id="presentation">
+  <img id="pres-img" alt="">
+  <video id="pres-video" autoplay loop controls></video>
+  <iframe id="pres-iframe" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+
+  <div id="pres-overlay">
+    <canvas id="draw-canvas"></canvas>
+    <div id="text-layer"></div>
+  </div>
+
+  <button class="pres-nav" id="nav-prev">&#8592;</button>
+  <button class="pres-nav" id="nav-next">&#8594;</button>
+
+  <div id="pres-tools">
+    <button class="tool-btn" id="tool-draw" title="Kreslit (D)">&#9998;</button>
+    <button class="tool-btn" id="tool-text" title="Text box (T)">T</button>
+    <button class="tool-btn" id="tool-clear" title="Vymazat kresbu (C)">&#8856;</button>
+  </div>
+
+  <div class="pres-hud">
+    <span id="pres-counter">1 / 1</span>
+    <span class="hud-sep">|</span>
+    <span>← →&nbsp; D kreslit&nbsp; T text&nbsp; ESC zpět</span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+let slides = [];
+let readySlides = [];
+let currentIdx = 0;
+let inPres = false;
+
+// Tool state
+let activeTool = null;  // null | 'draw' | 'text'
+
+// Drawing state
+const FADE_MS = 3500;
+const DRAW_COLOR = 'rgb(255, 70, 70)';
+const DRAW_WIDTH = 4;
+let drawStrokes = [];
+let activeStroke = null;
+let drawRafId = null;
+
+const $ = id => document.getElementById(id);
+const hub         = $('hub');
+const pres        = $('presentation');
+const urlInput    = $('url-input');
+const addBtn      = $('add-btn');
+const dropZone    = $('drop-zone');
+const fileInput   = $('file-input');
+const slideQueue  = $('slide-queue');
+const queueEmpty  = $('queue-empty');
+const playBtn     = $('play-btn');
+const pdfBtn      = $('pdf-btn');
+const badge       = $('slide-count-badge');
+const clearBtn    = $('clear-btn');
+const presImg     = $('pres-img');
+const presVideo   = $('pres-video');
+const presIframe  = $('pres-iframe');
+const presCounter = $('pres-counter');
+
+let swallowNextClick = false;
+const presOverlay = $('pres-overlay');
+const drawCanvas  = $('draw-canvas');
+const textLayer   = $('text-layer');
+const toolDraw    = $('tool-draw');
+const toolText    = $('tool-text');
+const toolClear   = $('tool-clear');
+const navPrev     = $('nav-prev');
+const navNext     = $('nav-next');
+
+Sortable.create(slideQueue, {
+  animation: 140,
+  ghostClass: 'sortable-ghost',
+  filter: '.card-del',
+  preventOnFilter: true,
+  onEnd({ item, newIndex }) {
+    const from = slides.findIndex(s => s.id === item.dataset.id);
+    if (from < 0) return;
+    const [s] = slides.splice(from, 1);
+    slides.splice(newIndex, 0, s);
+    renderQueue();
+  }
+});
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function shortUrl(url) {
+  try { return new URL(url).hostname; } catch { return url.slice(0, 30); }
+}
+
+function updateHeader() {
+  const ready = slides.filter(s => s.status === 'ready').length;
+  badge.textContent = slides.length + ' snímků';
+  playBtn.disabled = ready === 0;
+  pdfBtn.disabled = ready === 0;
+  clearBtn.style.display = slides.length ? '' : 'none';
+}
+
+function renderQueue() {
+  slideQueue.innerHTML = '';
+  const has = slides.length > 0;
+  queueEmpty.style.display = has ? 'none' : '';
+  slideQueue.style.display = has ? '' : 'none';
+
+  slides.forEach((slide, i) => {
+    const card = document.createElement('div');
+    card.className = 'slide-card ' +
+      (slide.status === 'loading' ? 'is-loading' :
+       slide.status === 'error'   ? 'is-error'   : 'is-ready');
+    card.dataset.id = slide.id;
+
+    let thumb;
+    if (slide.status === 'loading') {
+      thumb = '<div class="thumb-center"><div class="thumb-spinner"></div></div>';
+    } else if (slide.status === 'error') {
+      thumb = '<div class="thumb-center" style="font-size:20px">⚠️</div>';
+    } else if (slide.type === 'iframe') {
+      const bg = slide.thumb ? `<img src="${esc(slide.thumb)}" style="width:100%;height:100%;object-fit:cover;opacity:0.7">` : '<div class="thumb-video-bg"></div>';
+      thumb = `${bg}<div class="thumb-center thumb-video-icon" style="z-index:1;position:absolute;inset:0">▶</div>`;
+    } else if (slide.type === 'video') {
+      thumb = '<div class="thumb-video-bg"></div><div class="thumb-center thumb-video-icon" style="z-index:1">▶</div>';
+    } else {
+      thumb = `<img src="${esc(slide.thumb || slide.url)}" loading="lazy" onerror="this.style.opacity=0">`;
+    }
+
+    const label = slide.status === 'error'
+      ? (slide.error || 'Chyba')
+      : (slide.title || shortUrl(slide.url));
+
+    card.innerHTML = `
+      <div class="card-thumb">
+        ${thumb}
+        <span class="card-num">${String(i + 1).padStart(2, '0')}</span>
+        ${slide.status === 'ready' && slide.type === 'video' ? '<span class="card-badge">VIDEO</span>' : ''}
+        <button class="card-del" title="Odstranit">×</button>
+      </div>
+      <div class="card-footer">
+        <div class="card-name${slide.status === 'error' ? ' err' : ''}">${esc(label)}</div>
+      </div>`;
+
+    card.querySelector('.card-del').addEventListener('click', e => {
+      e.stopPropagation();
+      slides = slides.filter(s => s.id !== slide.id);
+      renderQueue();
+    });
+
+    if (slide.status === 'ready') {
+      card.addEventListener('click', e => {
+        if (e.target.classList.contains('card-del')) return;
+        startPres(i);
+      });
+    }
+
+    slideQueue.appendChild(card);
+  });
+
+  updateHeader();
+}
+
+// URL extraction
+async function extractUrl(rawUrl) {
+  const url = rawUrl.trim();
+  if (!url) return;
+
+  const id = uid();
+  const slide = { id, type: 'image', url, title: '', status: 'loading', error: null };
+  slides.push(slide);
+  renderQueue();
+
+  try {
+    const res = await fetch('/api/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Chyba ${res.status}`);
+    if (!data.items?.length) throw new Error('Žádná média nenalezena');
+
+    const [first, ...rest] = data.items;
+    Object.assign(slide, { type: first.type, url: first.url, thumb: first.thumb || '', title: first.title, status: 'ready' });
+
+    if (rest.length) {
+      const extras = rest.map(item => ({
+        id: uid(), type: item.type, url: item.url, thumb: item.thumb || '',
+        title: item.title, status: 'ready', error: null
+      }));
+      slides.splice(slides.indexOf(slide) + 1, 0, ...extras);
+    }
+  } catch (err) {
+    Object.assign(slide, { status: 'error', error: err.message });
+  }
+
+  renderQueue();
+}
+
+function addUrls() {
+  const lines = urlInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!lines.length) return;
+  urlInput.value = '';
+  lines.forEach(url => extractUrl(url));
+}
+
+addBtn.addEventListener('click', addUrls);
+urlInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addUrls(); }
+});
+
+// File upload
+function handleFiles(files) {
+  for (const f of files) {
+    slides.push({
+      id: uid(),
+      type: f.type.startsWith('video') ? 'video' : 'image',
+      url: URL.createObjectURL(f),
+      title: f.name,
+      status: 'ready',
+      error: null
+    });
+  }
+  renderQueue();
+}
+
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+
+// Drag URL from browser onto page
+document.addEventListener('dragover', e => {
+  if ([...e.dataTransfer.types].includes('text/uri-list')) e.preventDefault();
+});
+document.addEventListener('drop', e => {
+  const uris = e.dataTransfer.getData('text/uri-list');
+  if (!uris) return;
+  e.preventDefault();
+  uris.split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#')).forEach(extractUrl);
+});
+
+// Ctrl+V paste — image from clipboard OR URL text
+document.addEventListener('paste', e => {
+  if (inPres) return;
+
+  const items = [...e.clipboardData.items];
+
+  // Image blob (screenshot, copied image)
+  const imgItem = items.find(it => it.type.startsWith('image/'));
+  if (imgItem) {
+    e.preventDefault();
+    const blob = imgItem.getAsFile();
+    const ts = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    slides.push({
+      id: uid(), type: 'image',
+      url: URL.createObjectURL(blob),
+      title: `clipboard ${ts}`,
+      status: 'ready', error: null
+    });
+    renderQueue();
+    return;
+  }
+
+  // Text — extract URLs (only when not typing in the textarea)
+  if (e.target === urlInput) return;
+  const textItem = items.find(it => it.type === 'text/plain');
+  if (textItem) {
+    textItem.getAsString(text => {
+      const urls = text.split('\n').map(s => s.trim()).filter(s => /^https?:\/\//.test(s));
+      if (urls.length) { e.preventDefault(); urls.forEach(extractUrl); }
+    });
+  }
+});
+
+clearBtn.addEventListener('click', () => { slides = []; renderQueue(); });
+playBtn.addEventListener('click', () => startPres(0, true));
+
+// Presentation
+function startPres(queueIdx = 0, fromPlay = false) {
+  readySlides = slides.filter(s => s.status === 'ready');
+  if (!readySlides.length) return;
+
+  if (fromPlay) {
+    currentIdx = 0;
+  } else {
+    const clicked = slides[queueIdx];
+    const ri = readySlides.indexOf(clicked);
+    currentIdx = ri >= 0 ? ri : 0;
+  }
+
+  inPres = true;
+  hub.style.display = 'none';
+  pres.classList.add('active');
+  document.body.style.cursor = 'none';
+  showSlide(currentIdx);
+}
+
+function clearMedia() {
+  presImg.style.display = 'none';
+  presVideo.pause();
+  presVideo.style.display = 'none';
+  presIframe.src = '';
+  presIframe.style.display = 'none';
+}
+
+function stopPres() {
+  saveTextBoxes();
+  setTool(null);
+  clearDrawing();
+  clearMedia();
+  inPres = false;
+  pres.classList.remove('active');
+  hub.style.display = '';
+  document.body.style.cursor = '';
+}
+
+function showSlide(idx) {
+  const slide = readySlides[idx];
+  if (!slide) return;
+  clearMedia();
+  presCounter.textContent = `${idx + 1} / ${readySlides.length}`;
+
+  let el;
+  if (slide.type === 'video') {
+    presVideo.src = slide.url;
+    presVideo.style.display = 'block';
+    presVideo.play().catch(() => {});
+    el = presVideo;
+  } else if (slide.type === 'iframe') {
+    presIframe.src = slide.url;
+    presIframe.style.display = 'block';
+    el = presIframe;
+  } else {
+    presImg.src = slide.url;
+    presImg.style.display = 'block';
+    el = presImg;
+  }
+  el.classList.remove('pres-enter');
+  void el.offsetWidth;
+  el.classList.add('pres-enter');
+  restoreTextBoxes(slide);
+}
+
+function prevSlide() {
+  saveTextBoxes();
+  clearDrawing();
+  currentIdx = (currentIdx - 1 + readySlides.length) % readySlides.length;
+  showSlide(currentIdx);
+}
+function nextSlide() {
+  saveTextBoxes();
+  clearDrawing();
+  currentIdx = (currentIdx + 1) % readySlides.length;
+  showSlide(currentIdx);
+}
+
+navPrev.addEventListener('click', prevSlide);
+navNext.addEventListener('click', nextSlide);
+
+// Click left 40% = prev, right 60% = next (only when no tool active)
+pres.addEventListener('click', e => {
+  if (swallowNextClick) { swallowNextClick = false; return; }
+  if (activeTool) return;
+  if (e.target === navPrev || e.target === navNext) return;
+  if (e.target.tagName === 'VIDEO' || e.target.tagName === 'IFRAME') return;
+  if (e.target.closest('#pres-tools')) return;
+  if (e.target.closest('.text-box')) return;
+  (e.clientX / window.innerWidth < 0.4 ? prevSlide : nextSlide)();
+});
+
+document.addEventListener('keydown', e => {
+  if (!inPres) return;
+  const inTextBox = document.activeElement?.classList.contains('tb-content');
+
+  if (e.key === 'Escape') {
+    if (inTextBox) { document.activeElement.blur(); return; }
+    if (activeTool) { setTool(null); return; }
+    stopPres(); return;
+  }
+  if (inTextBox) return;
+
+  if (e.key === 'd' || e.key === 'D') { setTool(activeTool === 'draw' ? null : 'draw'); return; }
+  if (e.key === 't' || e.key === 'T') { setTool(activeTool === 'text' ? null : 'text'); return; }
+  if (e.key === 'c' || e.key === 'C') { clearDrawing(); return; }
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+});
+
+// Show cursor on mouse move in presentation
+let cursorTimer;
+pres.addEventListener('mousemove', () => {
+  if (activeTool) return;
+  document.body.style.cursor = '';
+  clearTimeout(cursorTimer);
+  cursorTimer = setTimeout(() => { if (inPres && !activeTool) document.body.style.cursor = 'none'; }, 2000);
+});
+
+// ── TOOLS ────────────────────────────────────────
+function setTool(tool) {
+  activeTool = tool;
+  toolDraw.classList.toggle('active', tool === 'draw');
+  toolText.classList.toggle('active', tool === 'text');
+  presOverlay.classList.toggle('tool-active', !!tool);
+  if (tool === 'draw') {
+    presOverlay.style.cursor = 'crosshair';
+    document.body.style.cursor = 'crosshair';
+    clearTimeout(cursorTimer);
+  } else if (tool === 'text') {
+    presOverlay.style.cursor = 'text';
+    document.body.style.cursor = 'text';
+    clearTimeout(cursorTimer);
+  } else {
+    presOverlay.style.cursor = '';
+    document.body.style.cursor = 'none';
+  }
+}
+
+toolDraw.addEventListener('click', () => setTool(activeTool === 'draw' ? null : 'draw'));
+toolText.addEventListener('click', () => setTool(activeTool === 'text' ? null : 'text'));
+toolClear.addEventListener('click', clearDrawing);
+
+// ── DRAWING ──────────────────────────────────────
+function resizeCanvas() {
+  drawCanvas.width = window.innerWidth;
+  drawCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function clearDrawing() {
+  drawStrokes = [];
+  activeStroke = null;
+  const ctx = drawCanvas.getContext('2d');
+  ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  if (drawRafId) { cancelAnimationFrame(drawRafId); drawRafId = null; }
+}
+
+function renderDrawing() {
+  const ctx = drawCanvas.getContext('2d');
+  ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  const now = Date.now();
+
+  drawStrokes = drawStrokes.filter(s => !s.endTime || now - s.endTime < FADE_MS);
+
+  for (const s of drawStrokes) {
+    if (s.points.length < 2) continue;
+    const alpha = s.endTime ? Math.max(0, 1 - (now - s.endTime) / FADE_MS) : 1;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(s.points[0].x, s.points[0].y);
+    for (let i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawRafId = drawStrokes.length ? requestAnimationFrame(renderDrawing) : null;
+}
+
+presOverlay.addEventListener('pointerdown', e => {
+  if (activeTool !== 'draw') return;
+  if (e.target.closest('.text-box')) return;
+  e.preventDefault();
+  activeStroke = { points: [{ x: e.clientX, y: e.clientY }], endTime: null, color: DRAW_COLOR, width: DRAW_WIDTH };
+  drawStrokes.push(activeStroke);
+  presOverlay.setPointerCapture(e.pointerId);
+  if (!drawRafId) drawRafId = requestAnimationFrame(renderDrawing);
+});
+
+presOverlay.addEventListener('pointermove', e => {
+  if (!activeStroke) return;
+  activeStroke.points.push({ x: e.clientX, y: e.clientY });
+});
+
+presOverlay.addEventListener('pointerup', () => {
+  if (!activeStroke) return;
+  activeStroke.endTime = Date.now();
+  activeStroke = null;
+});
+
+// ── TEXT BOXES ───────────────────────────────────
+function saveTextBoxes() {
+  const slide = readySlides[currentIdx];
+  if (!slide) return;
+  slide.textBoxes = [...textLayer.querySelectorAll('.text-box')].map(el => ({
+    id: el.dataset.id,
+    x: parseFloat(el.style.left),
+    y: parseFloat(el.style.top),
+    text: el.querySelector('.tb-content').textContent
+  }));
+}
+
+function restoreTextBoxes(slide) {
+  textLayer.innerHTML = '';
+  for (const tb of (slide?.textBoxes ?? [])) {
+    buildTextBox(tb.x, tb.y, tb.text, tb.id);
+  }
+}
+
+function buildTextBox(x, y, text = '', id = uid()) {
+  const box = document.createElement('div');
+  box.className = 'text-box';
+  box.dataset.id = id;
+  box.style.left = x + 'px';
+  box.style.top  = y + 'px';
+  box.innerHTML = `<div class="tb-content" contenteditable spellcheck="false"></div>
+                   <button class="tb-del">×</button>`;
+  box.querySelector('.tb-content').textContent = text;
+
+  let dragging = false, didMove = false, ox = 0, oy = 0;
+
+  box.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('tb-content') && document.activeElement === e.target) return;
+    if (e.target.classList.contains('tb-del')) return;
+    dragging = true;
+    didMove = false;
+    ox = e.clientX - parseFloat(box.style.left);
+    oy = e.clientY - parseFloat(box.style.top);
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    didMove = true;
+    box.style.left = (e.clientX - ox) + 'px';
+    box.style.top  = (e.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (dragging && didMove) swallowNextClick = true;
+    dragging = false;
+    didMove = false;
+  });
+
+  box.querySelector('.tb-del').addEventListener('click', e => {
+    e.stopPropagation();
+    box.remove();
+    const slide = readySlides[currentIdx];
+    if (slide) slide.textBoxes = (slide.textBoxes || []).filter(t => t.id !== id);
+  });
+
+  textLayer.appendChild(box);
+  return box;
+}
+
+// Click on overlay in text mode = create text box
+presOverlay.addEventListener('click', e => {
+  if (activeTool !== 'text') return;
+  if (e.target.closest('.text-box')) return;
+  const box = buildTextBox(e.clientX - 8, e.clientY - 18);
+  setTimeout(() => box.querySelector('.tb-content').focus(), 0);
+});
+
+// ── PDF EXPORT ───────────────────────────────────
+pdfBtn.addEventListener('click', exportPDF);
+
+function proxyUrl(src) {
+  if (!src || src.startsWith('blob:') || src.startsWith('data:')) return src;
+  return `/api/proxy?url=${encodeURIComponent(src)}`;
+}
+
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function fitImg(iw, ih, W, H) {
+  const s = Math.min(W / iw, H / ih);
+  const dw = iw * s, dh = ih * s;
+  return [(W - dw) / 2, (H - dh) / 2, dw, dh];
+}
+
+function captureVideoFrame(src) {
+  return new Promise(resolve => {
+    const v = document.createElement('video');
+    v.muted = true; v.src = src; v.currentTime = 0.5;
+    v.addEventListener('seeked', () => {
+      const c = document.createElement('canvas');
+      c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720;
+      c.getContext('2d').drawImage(v, 0, 0);
+      resolve(c);
+    }, { once: true });
+    v.addEventListener('error', () => resolve(null), { once: true });
+    v.load();
+  });
+}
+
+async function exportPDF() {
+  const exportSlides = slides.filter(s => s.status === 'ready');
+  if (!exportSlides.length) return;
+
+  pdfBtn.disabled = true;
+  pdfBtn.textContent = '…';
+
+  const W = 1280, H = 720;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [W, H], compress: true });
+
+  for (let i = 0; i < exportSlides.length; i++) {
+    const slide = exportSlides[i];
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    try {
+      if (slide.type === 'image') {
+        const img = await loadImg(proxyUrl(slide.url));
+        ctx.drawImage(img, ...fitImg(img.naturalWidth, img.naturalHeight, W, H));
+
+      } else if (slide.type === 'iframe') {
+        if (slide.thumb) {
+          const img = await loadImg(proxyUrl(slide.thumb));
+          ctx.globalAlpha = 0.6;
+          ctx.drawImage(img, ...fitImg(img.naturalWidth, img.naturalHeight, W, H));
+          ctx.globalAlpha = 1;
+        }
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        ctx.font = 'bold 72px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('▶', W / 2, H / 2);
+        if (slide.title) {
+          ctx.font = '24px system-ui';
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.fillText(slide.title, W / 2, H / 2 + 60);
+        }
+
+      } else if (slide.type === 'video') {
+        const frame = await captureVideoFrame(slide.url);
+        if (frame) {
+          ctx.drawImage(frame, ...fitImg(frame.width, frame.height, W, H));
+        } else {
+          ctx.fillStyle = '#111';
+          ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          ctx.font = 'bold 48px system-ui';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('▶ VIDEO', W / 2, H / 2);
+        }
+      }
+    } catch {
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.font = '18px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('⚠ ' + (slide.title || shortUrl(slide.url)), W / 2, H / 2);
+    }
+
+    // Draw text boxes (scale from screen coords to canvas coords)
+    const sx = W / window.innerWidth;
+    const sy = H / window.innerHeight;
+    for (const tb of (slide.textBoxes ?? [])) {
+      if (!tb.text) continue;
+      const fs = Math.round(22 * Math.min(sx, sy));
+      const tx = tb.x * sx, ty = tb.y * sy;
+      ctx.save();
+      ctx.font = `bold ${fs}px system-ui`;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      const tw = ctx.measureText(tb.text).width;
+      const pad = 6 * Math.min(sx, sy);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, tw + pad * 2, fs + pad * 2, 4);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(tb.text, tx + pad, ty + pad);
+      ctx.restore();
+    }
+
+    if (i > 0) pdf.addPage([W, H], 'landscape');
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, W, H);
+  }
+
+  pdf.save('prezentace.pdf');
+  pdfBtn.disabled = false;
+  pdfBtn.textContent = '↓ PDF';
+}
+
+renderQueue();
+</script>
+</body>
+</html>
